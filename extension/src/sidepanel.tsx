@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
 import AudioVisualizer from './components/AudioVisualizer'
-import type { ProjectSpec, Requirement, AgenticTool } from './utils/promptGenerator'
+import type { ProjectSpec, AgenticTool } from './utils/promptGenerator'
 import {
     generateSuperPrompt,
     copyToClipboardAndRedirect,
@@ -12,61 +12,7 @@ import {
 import CodePreview from './components/CodePreview'
 import type { GeneratedFile } from './utils/zipGenerator'
 
-// Status Badge Component
-const StatusIndicator = ({ status }: { status: string }) => {
-    const isRecording = status === 'Recording';
-    return (
-        <div style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '6px 12px', background: 'rgba(255,255,255,0.08)', borderRadius: '20px'
-        }}>
-            <div style={{
-                width: '8px', height: '8px', borderRadius: '50%',
-                background: isRecording ? 'var(--tint-success)' : 'var(--text-tertiary)',
-                boxShadow: isRecording ? '0 0 8px var(--tint-success)' : 'none',
-                transition: 'all 0.3s'
-            }} />
-            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                {status === 'Recording' ? 'Listening' : status}
-            </span>
-        </div>
-    )
-}
-
-// Project North Star Component
-const NorthStar = ({ summary }: { summary: string }) => (
-    <div className="north-star animate-enter">
-        <div className="north-star-label">🎯 Project North Star</div>
-        <div className="north-star-summary">{summary}</div>
-    </div>
-)
-
-// Requirement Item Component
-const RequirementItem = ({ requirement, isNew }: { requirement: Requirement; isNew: boolean }) => {
-    const isSuperseded = requirement.status === 'superseded';
-
-    return (
-        <div className={`requirement-item ${isNew ? 'new' : ''} ${isSuperseded ? 'superseded' : ''}`}>
-            <div className="requirement-id">{requirement.id}</div>
-            <div className="requirement-content">
-                <div className="requirement-text">{requirement.description}</div>
-                <span className={`requirement-badge ${requirement.status}`}>
-                    {requirement.status === 'active' ? '✓ Active' : '✗ Changed'}
-                    {requirement.supersedes && ` (replaced #${requirement.supersedes})`}
-                </span>
-            </div>
-        </div>
-    )
-}
-
-// Tech Stack Display
-const TechStackDisplay = ({ techStack }: { techStack: string[] }) => (
-    <div className="tech-stack">
-        {techStack.map((tech, i) => (
-            <span key={i} className="tech-pill">{tech}</span>
-        ))}
-    </div>
-)
+// --- LEGACY COMPONENTS REMOVED FOR ONYX VOID ---
 
 const SidePanel = () => {
     const [status, setStatus] = useState<'Disconnected' | 'Connected' | 'Error' | 'Recording'>('Disconnected');
@@ -90,8 +36,9 @@ const SidePanel = () => {
     const [isGenerating, setIsGenerating] = useState(false);
 
     // Progress Logic
-    const [wordCountProgress, setWordCountProgress] = useState(0);
-    const TARGET_WORD_COUNT = 30;
+    // Progress Logic (Simplified for Onyx Void)
+    const [_, setWordCountProgress] = useState(0); // Kept for set compatibility
+    // const TARGET_WORD_COUNT = 30; // Unused in new UI
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const socketRef = useRef<WebSocket | null>(null);
     const previousSpecRef = useRef<ProjectSpec | null>(null);
@@ -318,178 +265,167 @@ const SidePanel = () => {
         }
     };
 
+    // Onyx Void: Only showing active requirements in the main log
     const activeRequirements = projectSpec?.requirements.filter(r => r.status === 'active') || [];
-    const supersededRequirements = projectSpec?.requirements.filter(r => r.status === 'superseded') || [];
 
+    // --- RENDER UNCHANGED LOGIC ABOVE ---
+
+    // --- ONYX VOID RENDER ---
     return (
         <div style={{
-            height: '100vh', padding: '20px', display: 'flex', flexDirection: 'column',
-            gap: '16px', boxSizing: 'border-box'
+            height: '100vh',
+            padding: '24px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            boxSizing: 'border-box'
         }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '20px' }}>🚀</span>
-                    <span style={{ fontSize: '18px', fontWeight: '700', letterSpacing: '-0.5px' }}>DevDraft AI</span>
+            {/* 1. Dynamic Header */}
+            <div className="header-container animate-enter" style={{ animationDelay: '0ms' }}>
+                <div className="brand-text">
+                    <span style={{ color: 'var(--hyper-purple)' }}>◆</span>
+                    DEVDRAFT
                 </div>
-                <StatusIndicator status={status} />
-            </div>
-
-            {/* Main Panel */}
-            <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
-                {/* Visualizer Section */}
-                <div style={{
-                    height: '100px',
-                    background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, transparent 100%)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    borderBottom: '1px solid var(--material-border)',
-                    flexShrink: 0
-                }}>
-                    <AudioVisualizer stream={stream} isActive={status === 'Recording'} />
-                    {status === 'Recording' && (
-                        <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '6px' }}>
-                            Extracting requirements... {wordCountProgress} / {TARGET_WORD_COUNT} words
-                        </div>
-                    )}
-                </div>
-
-                {/* Content Area */}
-                <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-                    {/* Empty State */}
-                    {!projectSpec && !transcript && (
-                        <div className="empty-state">
-                            <div className="empty-state-icon">🎤</div>
-                            <div className="empty-state-text">
-                                Start a capture to listen to your client meeting and extract project requirements
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Project North Star */}
-                    {projectSpec?.project_summary && (
-                        <NorthStar summary={projectSpec.project_summary} />
-                    )}
-
-                    {/* Tech Stack */}
-                    {projectSpec?.tech_stack && projectSpec.tech_stack.length > 0 && (
-                        <div className="animate-enter">
-                            <div className="text-tiny" style={{ marginBottom: '8px' }}>TECH STACK</div>
-                            <TechStackDisplay techStack={projectSpec.tech_stack} />
-                        </div>
-                    )}
-
-                    {/* Active Requirements */}
-                    {activeRequirements.length > 0 && (
-                        <div className="animate-enter">
-                            <div className="text-tiny" style={{ marginBottom: '10px' }}>
-                                REQUIREMENTS ({activeRequirements.length})
-                            </div>
-                            {activeRequirements.map(req => (
-                                <RequirementItem
-                                    key={req.id}
-                                    requirement={req}
-                                    isNew={newRequirementIds.has(req.id)}
-                                />
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Superseded Requirements (Collapsed) */}
-                    {supersededRequirements.length > 0 && (
-                        <details style={{ opacity: 0.7 }}>
-                            <summary style={{
-                                fontSize: '11px',
-                                color: 'var(--text-tertiary)',
-                                cursor: 'pointer',
-                                marginBottom: '8px'
-                            }}>
-                                {supersededRequirements.length} changed requirement{supersededRequirements.length > 1 ? 's' : ''}
-                            </summary>
-                            {supersededRequirements.map(req => (
-                                <RequirementItem
-                                    key={req.id}
-                                    requirement={req}
-                                    isNew={false}
-                                />
-                            ))}
-                        </details>
-                    )}
-
-                    {/* Live Transcript */}
-                    {transcript && (
-                        <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--material-border)' }}>
-                            <div className="text-tiny" style={{ marginBottom: '6px' }}>LIVE TRANSCRIPT</div>
-                            <p style={{ margin: 0, fontSize: '12px', lineHeight: '1.5', color: 'var(--text-tertiary)' }}>
-                                {transcript}
-                            </p>
-                        </div>
-                    )}
+                <div className={`status-pill ${status === 'Recording' ? 'recording' : ''}`}>
+                    <div className="status-dot" />
+                    <span>{status === 'Recording' ? 'LISTENING' : status.toUpperCase()}</span>
                 </div>
             </div>
 
-            {/* Build Actions */}
-            {projectSpec && (
-                <div className="animate-enter" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {/* Generate Code Button - Primary CTA */}
-                    <button
-                        className="btn-ios btn-build"
-                        onClick={handleGenerateCode}
-                        disabled={isGenerating}
-                        style={{ opacity: isGenerating ? 0.7 : 1 }}
-                    >
-                        <span>{isGenerating ? '⏳' : '🔨'}</span>
-                        <span>{isGenerating ? 'Generating...' : 'Generate Code'}</span>
-                    </button>
+            {/* 2. Void Visualizer (Always present but active only when recording) */}
+            <div className="void-visualizer animate-enter" style={{ animationDelay: '100ms' }}>
+                <AudioVisualizer stream={stream} isActive={status === 'Recording'} />
+            </div>
 
-                    {/* Divider */}
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        fontSize: '11px',
-                        color: 'var(--text-tertiary)'
-                    }}>
-                        <div style={{ flex: 1, height: '1px', background: 'var(--material-border)' }} />
-                        <span>or export to</span>
-                        <div style={{ flex: 1, height: '1px', background: 'var(--material-border)' }} />
+            {/* 3. Main Scrollable Content */}
+            <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '20px', display: 'flex', flexDirection: 'column' }}>
+
+                {/* Empty State */}
+                {!projectSpec && !transcript && (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
+                        <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', marginBottom: '8px' }}>// AWAITING INPUT</div>
+                        <div style={{ width: '40px', height: '1px', background: 'var(--text-tertiary)' }} />
                     </div>
+                )}
 
-                    {/* Tool Selector */}
-                    <select
-                        className="tool-selector"
-                        value={selectedTool}
-                        onChange={(e) => setSelectedTool(e.target.value as AgenticTool)}
-                    >
-                        {getAvailableTools().map(tool => (
-                            <option key={tool.value} value={tool.value}>{tool.label}</option>
-                        ))}
-                    </select>
+                {/* Project Summary Shard */}
+                {projectSpec?.project_summary && (
+                    <div className="data-shard shard-northstar animate-enter">
+                        <div className="shard-label">OBJECTIVE</div>
+                        <div className="shard-content">{projectSpec.project_summary}</div>
+                    </div>
+                )}
 
-                    {/* Export Prompt Button */}
-                    <button
-                        className="btn-ios"
-                        onClick={handleBuildProject}
-                        style={{ background: 'rgba(255, 255, 255, 0.1)', boxShadow: 'none' }}
-                    >
-                        <span>📋</span>
-                        <span>Copy Prompt & Open</span>
-                    </button>
+                {/* Requirements Feed */}
+                {activeRequirements.length > 0 && (
+                    <div className="data-shard animate-enter" style={{ animationDelay: '200ms' }}>
+                        <div className="shard-label">REQUIREMENTS_LOG [{activeRequirements.length}]</div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            {activeRequirements.map(req => (
+                                <div key={req.id} className={`req-item ${newRequirementIds.has(req.id) ? 'new' : ''}`}>
+                                    <div className="req-id">{String(req.id).padStart(2, '0')}</div>
+                                    <div className="req-text">{req.description}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
-                    {buildStatus && (
+                {/* Tech Stack (Inline) */}
+                {projectSpec?.tech_stack && projectSpec.tech_stack.length > 0 && (
+                    <div className="data-shard animate-enter" style={{ padding: '12px 16px' }}>
+                        <div className="shard-label" style={{ marginBottom: '4px' }}>STACK_TRACE</div>
+                        <div style={{ color: 'var(--text-tertiary)', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                            {projectSpec.tech_stack.join('  //  ')}
+                        </div>
+                    </div>
+                )}
+
+                {/* Live Transcript Shard */}
+                {transcript && (
+                    <div className="data-shard animate-enter">
+                        <div className="shard-label">LIVE_STREAM</div>
                         <div style={{
                             fontSize: '12px',
-                            color: buildStatus.includes('Error') ? 'var(--tint-danger)' : 'var(--tint-success)',
-                            textAlign: 'center'
+                            lineHeight: '1.5',
+                            color: 'var(--text-secondary)',
+                            fontFamily: 'var(--font-mono)',
+                            maxHeight: '150px',
+                            overflowY: 'auto',
+                            whiteSpace: 'pre-wrap'
                         }}>
-                            {buildStatus}
+                            {transcript}
+                            <span className="cursor-blink">_</span>
                         </div>
-                    )}
-                </div>
-            )}
+                    </div>
+                )}
+            </div>
 
-            {/* Code Preview Modal */}
+            {/* 4. Action Deck */}
+            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }} className="animate-enter">
+
+                {projectSpec && (
+                    <>
+                        {/* Generate Button */}
+                        <button
+                            className="btn-liquid"
+                            onClick={handleGenerateCode}
+                            disabled={isGenerating}
+                        >
+                            {isGenerating ? (
+                                <>
+                                    <span>PROCESSING</span>
+                                    <span style={{ fontSize: '10px', opacity: 0.7 }}>// {buildStatus || 'WAIT'}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>GENERATE SYSTEM</span>
+                                    <span style={{ opacity: 0.5 }}>→</span>
+                                </>
+                            )}
+                        </button>
+
+                        {buildStatus && !isGenerating && (
+                            <div style={{
+                                fontSize: '10px',
+                                fontFamily: 'var(--font-mono)',
+                                textAlign: 'center',
+                                color: buildStatus.includes('Error') ? 'var(--hyper-red)' : 'var(--hyper-green)'
+                            }}>
+                                {'>'} {buildStatus}
+                            </div>
+                        )}
+
+                        {/* Secondary Actions Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            <button className="btn-ghost" onClick={handleBuildProject}>COPY PROMPT</button>
+                            <button className="btn-ghost" onClick={handleDownload}>DOWNLOAD</button>
+                        </div>
+
+                        {/* Tool Selector */}
+                        <select
+                            className="select-minimal"
+                            value={selectedTool}
+                            onChange={(e) => setSelectedTool(e.target.value as AgenticTool)}
+                        >
+                            {getAvailableTools().map(tool => (
+                                <option key={tool.value} value={tool.value}>TARGET: {tool.label.toUpperCase()}</option>
+                            ))}
+                        </select>
+                    </>
+                )}
+
+                {/* Record Control */}
+                <button
+                    className={`btn-liquid btn-record ${status === 'Recording' ? 'recording' : ''}`}
+                    onClick={status === 'Recording' ? stopCapture : startCapture}
+                    disabled={status === 'Connected' || status === 'Error'}
+                    style={{ marginTop: projectSpec ? '8px' : '0' }}
+                >
+                    {status === 'Recording' ? 'TERMINATE SESSION' : 'INITIATE CAPTURE'}
+                </button>
+            </div>
+
+            {/* Modal */}
             {generatedCode && (
                 <CodePreview
                     projectName={generatedCode.projectName}
@@ -499,44 +435,6 @@ const SidePanel = () => {
                     onClose={() => setGeneratedCode(null)}
                 />
             )}
-
-            {/* Footer Actions */}
-            <div style={{ flexShrink: 0, display: 'flex', gap: '10px' }}>
-                <div style={{ flex: 1 }}>
-                    {status !== 'Recording' ? (
-                        <button className="btn-ios" onClick={startCapture} disabled={status === 'Connected' || status === 'Error'}>
-                            Start Capture
-                        </button>
-                    ) : (
-                        <button className="btn-ios destructive" onClick={stopCapture}>
-                            End Session
-                        </button>
-                    )}
-                </div>
-
-                {/* Download Button */}
-                {projectSpec && (
-                    <button
-                        className="btn-ios"
-                        onClick={handleDownload}
-                        style={{
-                            width: '48px',
-                            padding: 0,
-                            background: 'rgba(255,255,255,0.1)',
-                            flex: 'none',
-                            boxShadow: 'none',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                        title="Download Spec"
-                    >
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                    </button>
-                )}
-            </div>
         </div>
     )
 }
