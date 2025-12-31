@@ -1,174 +1,112 @@
-# DevDraft AI: Voice-to-Code Requirements Engine
+# <img src="https://raw.githubusercontent.com/GodlyDonuts/consensus/main/landing/public/logo.png" width="40" height="40" style="vertical-align: middle; margin-right: 10px;"> DevDraft AI
 
-**DevDraft AI** is a Chrome Extension and Python Backend that listens to client meetings, extracts project requirements in real-time, and generates prompts for agentic coding tools like Lovable, Bolt.new, and Replit.
+<div align="center">
+  <h3>Meetings to Code. Fast.</h3>
+  <p>An intelligent requirement extraction engine that listens to client meetings, handles pivots in real-time, and generates production-ready code.</p>
+</div>
 
-It uses **Deepgram** for speech-to-text and **Google Gemini** for intelligent requirement extraction, automatically handling "changed mind" scenarios where the latest instructions override previous ones.
+---
+
+## 🚀 Overview
+
+**DevDraft AI** is a multi-modal agentic tool designed for high-stress hackathons and rapid prototyping. It acts as an AI Senior Product Manager that joins your meetings, understands context, and converts spoken requirements directly into code.
+
+### ⚡ Key Features
+- **Real-Time Pivot Handling**: "Actually, let's use Supabase instead of Firebase." → *DevDraft immediately updates the specs and strikes through the old requirement.*
+- **Live PRD Generation**: Generates a structured Product Requirement Document (PRD) on the fly.
+- **Instant Code Generation**: One-click generation of a full React + Vite + Tailwind project.
+- **Agentic Tool Integration**: Exports optimized prompts for **Lovable**, **Bolt.new**, and **Replit Agent**.
 
 ---
 
 ## 🏗 System Architecture
 
-### 1. Frontend (Chrome Extension)
-- **Tech Stack**: React 18, Vite, TypeScript, Chrome Manifest V3
-- **Location**: `/extension`
-- **Features**:
-    - Captures tab/desktop audio using `navigator.mediaDevices.getDisplayMedia`
-    - Real-time audio visualization
-    - **Project North Star**: Live 1-sentence project summary
-    - **Requirements Feed**: Auto-updating list with pulse animation for new items
-    - **Smart Override Tracking**: Visual strike-through for superseded requirements
-    - **Build Button**: Copy prompt to clipboard and redirect to agentic tools
+The project consists of three main components:
 
-### 2. Backend (Requirement Extraction Engine)
-- **Tech Stack**: Python 3.10+, FastAPI, WebSockets
-- **Location**: `/backend`
-- **Features**:
-    - **Transcription**: Real-time speech-to-text via **Deepgram Nova-2**
-    - **Requirement Extraction**: Uses **Google Gemini** as a "Senior Product Manager"
-    - **Instruction Hierarchy**: Latest instructions override previous ones
-    - **30-Word Trigger**: Analyzes every ~30 words for responsive updates
-    - **Context Memory**: Maintains full transcript for reconciling changes
+| Component | Location | Tech Stack | Description |
+|-----------|----------|------------|-------------|
+| **Extension** | `/extension` | React 19, Vite, Chrome Manifest V3 | The side-panel companion that captures audio and displays the live feed. |
+| **Web Dashboard** | `/landing` | React 19, Tailwind, Framer Motion | The browser-based experience for users without the extension. |
+| **Cloud Backend** | `/backend` | Python 3.10, FastAPI, Gemini 1.5 Pro | The brain. Handles transcription (Deepgram), logic (Gemini), and code generation. |
 
 ---
 
-## ⚡ Key Features
+## 🛠 Quick Start (Web Dashboard)
 
-### 🎯 Instruction Hierarchy
-When clients change their mind ("Actually, use a sidebar instead of a navbar"), DevDraft AI:
-1. Marks the old requirement as "superseded"
-2. Creates a new "active" requirement
-3. Shows visual strike-through in the UI
+You don't need to install anything to try DevDraft AI.
 
-### 📋 Live PRD Generation
-As the conversation progresses, DevDraft AI builds a structured specification:
-- Project summary (North Star)
-- Tech stack suggestions
-- Feature requirements with status tracking
-- UI/UX preferences
-
-### 🚀 Agentic Tool Integration
-One-click export to coding tools:
-- **Lovable** - AI-powered app builder
-- **Bolt.new** - Full-stack web app generator
-- **Replit Agent** - Collaborative AI coding
-- **v0 by Vercel** - React component generator
-
-### 🔨 Built-in Code Generation
-DevDraft AI can **generate complete React projects** directly - no external tools needed:
-1. Click **"Generate Code"** after requirements are extracted
-2. AI generates a full Vite + React project with all files
-3. Preview code in the built-in file viewer
-4. Download as a ZIP file ready to run with `npm install && npm run dev`
+1. Go to the [Live Demo](https://devdraft-landing.vercel.app/)
+2. Click **"Try Web Demo"**
+3. Grant microphone permissions
+4. Start speaking requirements (e.g., *"Build a to-do app with dark mode..."*)
+5. Watch the PRD build itself in real-time.
 
 ---
 
-## 🛠 Setup & Usage
+## 📦 Installation (Chrome Extension)
+
+For the full deeply integrated experience:
+
+1. **Download**: Get the latest `DEVDRAFT.zip` from the [Landing Page](https://devdraft-landing.vercel.app/).
+2. **Install**:
+   - Open `chrome://extensions`
+   - Enable **Developer Mode** (top right)
+   - Click **Load Unpacked**
+   - Select the unzipped folder
+3. **Run**: Open the Side Panel in any tab to start analyzing.
+
+---
+
+## 💻 Local Development
 
 ### Prerequisites
-- Python 3.10+
 - Node.js 18+
-- API Keys:
-    - `DEEPGRAM_API_KEY`
-    - `GEMINI_API_KEY`
+- Python 3.10+
+- Docker (optional)
 
-### 1. Backend Setup
+### 1. Backend
+The backend is cloud-native but can be run locally.
+
 ```bash
 cd backend
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# Create .env
-echo "DEEPGRAM_API_KEY=your_key" > .env
-echo "GEMINI_API_KEY=your_key" >> .env
-
-# Run Server
+# Keys required in .env: DEEPGRAM_API_KEY, GEMINI_API_KEY
 uvicorn main:app --reload
 ```
-*Server runs on `ws://localhost:8000`*
 
-### 2. Frontend Setup
+### 2. Landing Page & Dashboard
+```bash
+cd landing
+npm install
+npm run dev
+```
+
+### 3. Extension
 ```bash
 cd extension
 npm install
 npm run build
-```
-1. Open Chrome -> `chrome://extensions`
-2. Enable "Developer Mode"
-3. Click "Load Unpacked" -> Select `extension/dist`
-
-### 3. Using DevDraft AI
-1. Open the Chrome Side Panel
-2. Ensure Backend is running
-3. Click **Start Capture**
-4. Select the tab/screen with client meeting audio (Check "Share Audio")
-5. Speak or play meeting audio - requirements will appear in real-time
-6. Choose your output method:
-   - **Generate Code**: Creates a complete React project (download as ZIP)
-   - **Export to Tool**: Copies prompt to clipboard and opens Lovable/Bolt.new
-
----
-
-## 🧩 API Schema
-
-The backend outputs structured JSON via WebSocket:
-
-```json
-{
-    "project_summary": "A dashboard for crypto tracking",
-    "requirements": [
-        {"id": 1, "description": "Dark mode UI", "status": "active"},
-        {"id": 2, "description": "Use sidebar navigation", "status": "active", "supersedes": 3},
-        {"id": 3, "description": "Use navbar navigation", "status": "superseded"}
-    ],
-    "tech_stack": ["React", "Tailwind", "Lucide Icons"],
-    "ui_preferences": ["Dark theme", "Minimal design"],
-    "raw_transcript_snapshot": "..."
-}
-```
-
-### Message Types
-| Type | Direction | Description |
-|------|-----------|-------------|
-| `start_capture` | Client → Server | Begin transcription session |
-| `stop_capture` | Client → Server | End session |
-| `transcript` | Server → Client | Real-time transcript chunk |
-| `word_count` | Server → Client | Current word count progress |
-| `project_spec` | Server → Client | Updated project specification |
-
----
-
-## 📂 Project Structure
-
-```
-/
-├── backend/
-│   ├── main.py              # FastAPI + Deepgram + Gemini
-│   ├── code_generator.py    # AI code generation service
-│   ├── requirements.txt     # Python dependencies
-│   └── .env                 # API keys
-├── extension/
-│   ├── src/
-│   │   ├── sidepanel.tsx    # Main DevDraft UI
-│   │   ├── components/
-│   │   │   ├── AudioVisualizer.tsx
-│   │   │   └── CodePreview.tsx  # Generated code viewer
-│   │   ├── utils/
-│   │   │   ├── promptGenerator.ts
-│   │   │   └── zipGenerator.ts  # ZIP download utility
-│   │   └── index.css        # DevDraft styling
-│   ├── manifest.json        # Chrome Extension config
-│   └── vite.config.ts       # Build config
-└── README.md
+# Load ./dist into Chrome
 ```
 
 ---
 
-## 🔮 Future Enhancements
+## 🧠 AI Model Pipeline
 
-- [x] ~~Direct API integration with agentic tools~~ → Built-in code generation!
-- [ ] Speaker diarization (identify who said what)
-- [ ] Priority/complexity scoring for requirements
-- [ ] Export to Jira/Linear/GitHub Issues
-- [ ] Team collaboration features
-- [ ] Iterative refinement ("Add a login page to the existing project")
+1. **Hearing (Deepgram Nova-2)**: Streams audio to text with <300ms latency.
+2. **Understanding (Gemini 1.5 Pro)**:
+   - Analyzes transcripts in 30-word chunks.
+   - Maintains a "Concept Graph" to detect conflicts.
+   - **Instruction Hierarchy**: New instructions with higher timestamps override older conflicting nodes.
+3. **Building (Gemini 2.0 Flash)**:
+   - **Planning Phase**: Architects the folder structure.
+   - **Coding Phase**: parallelized file generation.
+
+---
+
+## 📄 License
+
+MIT License. Built for the future of coding.
