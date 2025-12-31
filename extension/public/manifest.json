@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Consensus",
+  "version": "1.0.0",
+  "description": "The Anti-Groupthink Engine",
+  "permissions": ["sidePanel"],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "service-worker.js"
+  }
+}

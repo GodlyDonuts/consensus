@@ -1,0 +1,18 @@
+fastapi
+uvicorn
+websockets
+python-socketio
+deepgram-sdk==3.*
+python-dotenv
+google-genai
+
+# Cerebras AI SDK for Llama 3.3 70B
+cerebras-cloud-sdk
+
+# Caching
+cachetools
+
+# Phase 1: Cloud-Native Dependencies
+confluent-kafka
+google-cloud-firestore
+google-cloud-aiplatform
