@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DEVDRAFT",
   "version": "1.0.0",
-  "description": "The Anti-Groupthink Engine",
+  "description": "Your AI sidekick for code generation",
   "permissions": [
     "sidePanel"
   ],

@@ -3,8 +3,6 @@ import {
   Download,
   Terminal,
   Chrome,
-  Server,
-  Mic,
   Brain,
   RefreshCw,
   Zap,
@@ -77,9 +75,8 @@ const Hero = () => (
         <motion.a
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          href="https://github.com/GodlyDonuts/consensus"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/DEVDRAFT.zip"
+          download="DEVDRAFT.zip"
           className="group relative inline-flex items-center gap-3 bg-white text-black px-8 py-4 text-lg font-bold rounded-full overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
@@ -104,28 +101,25 @@ const Hero = () => (
 const HowItWorks = () => {
   const steps = [
     {
-      icon: Terminal,
-      title: "Clone & Setup",
-      code: "git clone repo",
-      desc: "Clone the repo and install dependencies."
+      icon: Download,
+      title: "Download",
+      code: "DEVDRAFT.zip",
+      desc: "Get the latest extension build.",
+      href: "/DEVDRAFT.zip",
+      download: "DEVDRAFT.zip"
     },
     {
       icon: Chrome,
       title: "Load Extension",
       code: "chrome://extensions",
-      desc: "Enable Developer Mode, 'Load Unpacked'."
+      desc: "Enable Developer Mode -> 'Load Unpacked' -> Select unzipped folder.",
+      href: "chrome://extensions"
     },
     {
-      icon: Server,
-      title: "Start Backend",
+      icon: Terminal,
+      title: "Run Backend",
       code: "uvicorn main:app",
-      desc: "Power the Gemini + Deepgram engine."
-    },
-    {
-      icon: Mic,
-      title: "Analyze",
-      code: "Start Analysis",
-      desc: "Open side panel in any meeting tab."
+      desc: "Start the AI engine to power the generation."
     }
   ];
 
@@ -145,26 +139,46 @@ const HowItWorks = () => {
           Setup in <span className="text-gradient-blue">Seconds</span>
         </motion.h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((step, idx) => (
-            <motion.div
-              key={idx}
-              variants={fadeInUp}
-              className="glass-card p-8 rounded-3xl relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative z-10">
-                <div className="w-14 h-14 bg-surface-highlight rounded-2xl flex items-center justify-center mb-6 border border-white/5 group-hover:border-action-blue/50 transition-colors">
-                  <step.icon size={28} className="text-white group-hover:text-action-blue transition-colors" />
+        <div className="flex flex-wrap justify-center gap-6">
+          {steps.map((step, idx) => {
+            const CardContent = (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="relative z-10">
+                  <div className="w-14 h-14 bg-surface-highlight rounded-2xl flex items-center justify-center mb-6 border border-white/5 group-hover:border-action-blue/50 transition-colors">
+                    <step.icon size={28} className="text-white group-hover:text-action-blue transition-colors" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
+                  <code className="block bg-black/50 text-gray-300 text-sm px-3 py-2 rounded-lg mb-4 font-mono border border-white/5">
+                    {step.title === 'Download' ? 'Click to Download' : '$ ' + step.code}
+                  </code>
+                  <p className="text-gray-400 leading-relaxed">{step.desc}</p>
                 </div>
-                <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
-                <code className="block bg-black/50 text-gray-300 text-sm px-3 py-2 rounded-lg mb-4 font-mono border border-white/5">
-                  $ {step.code}
-                </code>
-                <p className="text-gray-400 leading-relaxed">{step.desc}</p>
-              </div>
-            </motion.div>
-          ))}
+              </>
+            );
+
+            return step.href ? (
+              <motion.a
+                key={idx}
+                href={step.href}
+                download={step.download}
+                target={step.title === 'Load Extension' ? '_blank' : undefined}
+                variants={fadeInUp}
+                className="glass-card p-8 rounded-3xl relative overflow-hidden group w-full md:w-[calc(33.333%-16px)] min-w-[300px] cursor-pointer block"
+                whileHover={{ y: -5 }}
+              >
+                {CardContent}
+              </motion.a>
+            ) : (
+              <motion.div
+                key={idx}
+                variants={fadeInUp}
+                className="glass-card p-8 rounded-3xl relative overflow-hidden group w-full md:w-[calc(33.333%-16px)] min-w-[300px]"
+              >
+                {CardContent}
+              </motion.div>
+            );
+          })}
         </div>
       </motion.div>
     </section>
@@ -402,9 +416,8 @@ const Footer = () => (
         </motion.h2>
         <motion.div variants={fadeInUp}>
           <a
-            href="https://github.com/GodlyDonuts/consensus"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/DEVDRAFT.zip"
+            download="DEVDRAFT.zip"
             className="inline-flex items-center gap-3 bg-white text-black px-12 py-5 text-xl font-bold rounded-full hover:bg-gray-200 transition-colors"
           >
             <Download size={24} />
