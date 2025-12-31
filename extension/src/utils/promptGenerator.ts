@@ -61,6 +61,10 @@ ${activeRequirements.map(r => `- ${r.description}`).join('\n')}
 
     prompt += `\nPlease start by scaffolding the main components and implementing the core features.`;
 
+    if (spec.raw_transcript_snapshot) {
+        prompt += `\n\n## Raw Transcript Reference\n<details>\n<summary>Full conversation transcript</summary>\n\n${spec.raw_transcript_snapshot}\n\n</details>`;
+    }
+
     return prompt;
 };
 

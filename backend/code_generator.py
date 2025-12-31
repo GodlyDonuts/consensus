@@ -78,6 +78,21 @@ EXAMPLE src/index.css (ALWAYS INCLUDE):
 @tailwind utilities;
 """
 
+PLANNING_SYSTEM_PROMPT = """You are a Visionary Software Architect and Product Designer. Your goal is to design a cutting-edge, beautiful, and highly functional architecture for a React application.
+
+CRITICAL INSTRUCTIONS:
+1. **BE CREATIVE**: Do not just build a standard app. Suggest modern UI patterns, glassmorphism, gradients, smooth animations (Framer Motion), and intuitive UX flows.
+2. **DETAILED BLUEPRINT**: Create a comprehensive technical plan including:
+    - **Component Architecture**: List all key components and their responsibilities.
+    - **State Management**: How will data flow? (Context API, Zustand, or simple props).
+    - **UI/UX Strategy**: Specific color palettes (Tailwind classes), typography choices, and animation strategies.
+    - **File Structure**: A detailed tree of the project structure.
+3. **TECH STACK**: React 18, Tailwind CSS, Framer Motion (for animations), Lucide React (icons).
+
+OUTPUT FORMAT:
+Return a Markdown-formatted "Implementation Blueprint" that is detailed enough for a developer to build directly from.
+"""
+
 
 async def generate_project_code(
     project_spec: dict,
@@ -91,7 +106,7 @@ async def generate_project_code(
         client: Initialized Gemini client
         
     Returns:
-        Dictionary containing generated files and setup instructions
+        Async generator yielding status updates and finally the result
     """
     
     # Build the generation prompt
@@ -122,17 +137,63 @@ Generate the complete project now. Remember to output ONLY valid JSON with the f
 """
 
     try:
-        # Use Gemini 2.0 Flash for code generation (most capable for this task)
+        # STEP 1: PLANNING PHASE (Gemini 3 Flash)
+        print("[DevDraft] 🧠 Phase 1: Dreaming up a plan with Gemini 3 Flash...")
+        yield {"status": "planning", "message": "Phase 1: Architecting solution with Gemini 3 Flash..."}
+        
+        planning_prompt = f"""Create a detailed technical blueprint for this project:
+
+## Project Summary
+{project_spec.get('project_summary', 'A web application')}
+
+## Requirements
+{requirements_text}
+
+## Creative Direction
+{', '.join(ui_preferences) if ui_preferences else 'Modern, clean, professional design'}
+
+Be highly creative. Design a system that impresses.
+"""
+
+        plan_response = await client.aio.models.generate_content(
+            model='gemini-3-flash-preview',
+            contents=[
+                {"role": "user", "parts": [{"text": PLANNING_SYSTEM_PROMPT}]},
+                {"role": "user", "parts": [{"text": planning_prompt}]}
+            ],
+            config={
+                'temperature': 0.85, # High creativity
+            }
+        )
+        
+        blueprint = plan_response.text
+        print(f"[DevDraft] 📝 Blueprint created ({len(blueprint)} chars). Passing to builder...")
+        yield {"status": "planning_complete", "message": "Blueprint created. Initializing builder..."}
+
+        # STEP 2: BUILDING PHASE (Gemini 3 Flash)
+        # We inject the Blueprint into the builder's context
+        builder_context = f"""
+{user_prompt}
+
+## ARCHITECTURAL BLUEPRINT (FOLLOW THIS PLAN):
+{blueprint}
+
+Execute this plan exactly. Generate the corresponding code modules.
+"""
+
+        print("[DevDraft] 🔨 Phase 2: Building code with Gemini 3 Flash...")
+        yield {"status": "building", "message": "Phase 2: Generating code modules with Gemini 3 Flash..."}
+        
         response = await client.aio.models.generate_content(
             model='gemini-3-flash-preview',
             contents=[
                 {"role": "user", "parts": [{"text": CODE_GEN_SYSTEM_PROMPT}]},
-                {"role": "model", "parts": [{"text": "I understand. I will generate complete, working React code and return it as a JSON object with the file structure. Send me the project requirements."}]},
-                {"role": "user", "parts": [{"text": user_prompt}]}
+                {"role": "model", "parts": [{"text": "I understand. I will generate complete, working React code based on your Blueprint and return it as a JSON object."}]},
+                {"role": "user", "parts": [{"text": builder_context}]}
             ],
             config={
                 'response_mime_type': 'application/json',
-                'temperature': 0.7,  # Slightly creative but mostly deterministic
+                'temperature': 0.7, 
             }
         )
         
@@ -144,7 +205,8 @@ Generate the complete project now. Remember to output ONLY valid JSON with the f
         if 'files' not in result:
             raise ValueError("Response missing 'files' array")
             
-        return {
+        yield {
+            "status": "complete",
             "success": True,
             "project_name": result.get("project_name", "devdraft-project"),
             "files": result.get("files", []),
@@ -154,14 +216,16 @@ Generate the complete project now. Remember to output ONLY valid JSON with the f
         
     except json.JSONDecodeError as e:
         print(f"[DevDraft] JSON parse error in code generation: {e}")
-        return {
+        yield {
+            "status": "error",
             "success": False,
             "error": "Failed to parse generated code. Please try again.",
             "files": []
         }
     except Exception as e:
         print(f"[DevDraft] Code generation error: {e}")
-        return {
+        yield {
+            "status": "error",
             "success": False,
             "error": str(e),
             "files": []

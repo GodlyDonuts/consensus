@@ -115,7 +115,7 @@ const SidePanel = () => {
 
     const connectToBackend = (): Promise<WebSocket> => {
         return new Promise((resolve, reject) => {
-            const ws = new WebSocket('ws://localhost:8000/ws');
+            const ws = new WebSocket('wss://devdraft-backend-111310202200.us-central1.run.app/ws');
 
             ws.onopen = () => {
                 console.log("[DevDraft] WebSocket connected");
@@ -228,7 +228,8 @@ const SidePanel = () => {
     const handleBuildProject = async () => {
         if (!projectSpec) return;
 
-        const prompt = generateSuperPrompt(projectSpec);
+        const specWithTranscript = { ...projectSpec, raw_transcript_snapshot: _fullTranscript };
+        const prompt = generateSuperPrompt(specWithTranscript);
         const result = await copyToClipboardAndRedirect(prompt, selectedTool);
         setBuildStatus(result.message);
 
@@ -237,7 +238,8 @@ const SidePanel = () => {
 
     const handleDownload = () => {
         if (!projectSpec) return;
-        downloadPromptAsFile(projectSpec);
+        const specWithTranscript = { ...projectSpec, raw_transcript_snapshot: _fullTranscript };
+        downloadPromptAsFile(specWithTranscript);
     };
 
     const handleGenerateCode = async () => {
@@ -247,25 +249,65 @@ const SidePanel = () => {
         setBuildStatus('Generating code with AI...');
 
         try {
-            const response = await fetch('http://localhost:8000/api/generate', {
+            const response = await fetch('https://devdraft-backend-111310202200.us-central1.run.app/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ project_spec: projectSpec })
             });
 
-            const result = await response.json();
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error("No response body");
 
-            if (result.success && result.files.length > 0) {
-                setGeneratedCode({
-                    projectName: result.project_name,
-                    files: result.files,
-                    description: result.description,
-                    setupCommands: result.setup_commands
-                });
-                setBuildStatus('');
-            } else {
-                setBuildStatus(`Error: ${result.error || 'No code generated'}`);
-                setTimeout(() => setBuildStatus(''), 5000);
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+
+                // Process all complete lines
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    try {
+                        const message = JSON.parse(line);
+
+                        // Handle Status Updates
+                        if (message.status === 'planning') {
+                            setBuildStatus('🧠 Architecting Solution...');
+                        }
+                        else if (message.status === 'planning_complete') {
+                            setBuildStatus('📝 Blueprint Created!');
+                        }
+                        else if (message.status === 'building') {
+                            setBuildStatus('🔨 Building Code Modules...');
+                        }
+                        // Handle Completion
+                        else if (message.status === 'complete' || message.success) {
+                            if (message.success && message.files?.length > 0) {
+                                setGeneratedCode({
+                                    projectName: message.project_name,
+                                    files: message.files,
+                                    description: message.description,
+                                    setupCommands: message.setup_commands
+                                });
+                                setBuildStatus('');
+                            } else {
+                                setBuildStatus(`Error: ${message.error || 'No code generated'}`);
+                            }
+                        }
+                        // Handle Error
+                        else if (message.status === 'error') {
+                            setBuildStatus(`Error: ${message.error}`);
+                        }
+                    } catch (e) {
+                        console.error("Error parsing stream:", e);
+                    }
+                }
             }
         } catch (error) {
             console.error('[DevDraft] Generation error:', error);

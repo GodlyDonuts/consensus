@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -110,30 +111,22 @@ class GenerateCodeResponse(BaseModel):
 # Code Generation API Endpoint
 # ============================================================================
 
-@app.post("/api/generate", response_model=GenerateCodeResponse)
+@app.post("/api/generate")
 async def generate_code(request: GenerateCodeRequest):
     """Generate a complete React project from the project specification."""
     if not gemini_client:
-        return GenerateCodeResponse(
-            success=False,
-            error="Gemini API client not initialized. Check GEMINI_API_KEY."
-        )
+        return {"success": False, "error": "Gemini API client not initialized"}
     
     print(f"[DevDraft] Generating code for: {request.project_spec.project_summary}")
     
     # Convert Pydantic model to dict for the generator
     spec_dict = request.project_spec.model_dump()
     
-    result = await generate_project_code(spec_dict, gemini_client)
-    
-    return GenerateCodeResponse(
-        success=result.get("success", False),
-        project_name=result.get("project_name", "devdraft-project"),
-        files=[GeneratedFile(path=f["path"], content=f["content"]) for f in result.get("files", [])],
-        setup_commands=result.get("setup_commands", []),
-        description=result.get("description", ""),
-        error=result.get("error")
-    )
+    async def event_generator():
+        async for chunk in generate_project_code(spec_dict, gemini_client):
+            yield json.dumps(chunk) + "\n"
+
+    return StreamingResponse(event_generator(), media_type="application/x-ndjson")
 
 
 # ============================================================================
