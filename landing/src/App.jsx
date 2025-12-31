@@ -1,8 +1,10 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Download,
   Terminal,
   Chrome,
+  Mic,
   Brain,
   RefreshCw,
   Zap,
@@ -99,6 +101,8 @@ const Hero = () => (
 
 // How It Works Section
 const HowItWorks = () => {
+  const [copied, setCopied] = useState(false);
+
   const steps = [
     {
       icon: Download,
@@ -113,15 +117,23 @@ const HowItWorks = () => {
       title: "Load Extension",
       code: "chrome://extensions",
       desc: "Enable Developer Mode -> 'Load Unpacked' -> Select unzipped folder.",
-      href: "chrome://extensions"
+      href: "chrome://extensions", // Browser blocks this, handled by onClick
+      isSpecial: true
     },
     {
-      icon: Terminal,
-      title: "Run Backend",
-      code: "uvicorn main:app",
-      desc: "Start the AI engine to power the generation."
+      icon: Mic,
+      title: "Start Analyzing",
+      code: "Open Side Panel",
+      desc: "Open the extension in any meeting tab to begin."
     }
   ];
+
+  const handleCopyLink = (e, link) => {
+    e.preventDefault();
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <section id="how-it-works" className="relative py-32 px-6">
@@ -153,6 +165,13 @@ const HowItWorks = () => {
                     {step.title === 'Download' ? 'Click to Download' : '$ ' + step.code}
                   </code>
                   <p className="text-gray-400 leading-relaxed">{step.desc}</p>
+
+                  {/* Copy Feedback */}
+                  {step.isSpecial && (
+                    <div className={`absolute top-4 right-4 text-xs font-bold px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30 transition-opacity duration-300 ${copied ? 'opacity-100' : 'opacity-0'}`}>
+                      COPIED!
+                    </div>
+                  )}
                 </div>
               </>
             );
@@ -163,6 +182,7 @@ const HowItWorks = () => {
                 href={step.href}
                 download={step.download}
                 target={step.title === 'Load Extension' ? '_blank' : undefined}
+                onClick={step.isSpecial ? (e) => handleCopyLink(e, step.href) : undefined}
                 variants={fadeInUp}
                 className="glass-card p-8 rounded-3xl relative overflow-hidden group w-full md:w-[calc(33.333%-16px)] min-w-[300px] cursor-pointer block"
                 whileHover={{ y: -5 }}
