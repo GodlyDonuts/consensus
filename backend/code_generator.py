@@ -156,7 +156,7 @@ Be highly creative. Design a system that impresses.
 """
 
         plan_response = await client.aio.models.generate_content(
-            model='gemini-3-flash-preview',
+            model='gemini-2.0-flash-exp',
             contents=[
                 {"role": "user", "parts": [{"text": PLANNING_SYSTEM_PROMPT}]},
                 {"role": "user", "parts": [{"text": planning_prompt}]}
@@ -185,7 +185,7 @@ Execute this plan exactly. Generate the corresponding code modules.
         yield {"status": "building", "message": "Phase 2: Generating code modules with Gemini 3 Flash..."}
         
         response = await client.aio.models.generate_content(
-            model='gemini-3-flash-preview',
+            model='gemini-2.0-flash-exp',
             contents=[
                 {"role": "user", "parts": [{"text": CODE_GEN_SYSTEM_PROMPT}]},
                 {"role": "model", "parts": [{"text": "I understand. I will generate complete, working React code based on your Blueprint and return it as a JSON object."}]},
@@ -253,7 +253,7 @@ Return ONLY the file content, no JSON wrapper, no markdown code blocks.
     
     try:
         response = await client.aio.models.generate_content(
-            model='gemini-3-flash-preview',
+            model='gemini-2.0-flash-exp',
             contents=prompt
         )
         return response.text.strip()

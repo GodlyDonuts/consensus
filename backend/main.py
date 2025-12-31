@@ -46,10 +46,23 @@ except Exception as e:
     deepgram = None
 
 # Initialize Gemini Client (for code generation)
-if GEMINI_API_KEY:
-    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-else:
-    gemini_client = None
+# The "API keys not supported" error suggests we must use Vertex AI (ADC) mechanism
+# especially for preview models on Cloud Run.
+print(f"[DevDraft] Initializing Gemini Client for model: gemini-3-flash-preview")
+try:
+    # Use Vertex AI (ADC) by default on Cloud Run
+    project_id = os.getenv("GCP_PROJECT_ID", "consensus-482519")
+    location = os.getenv("GCP_REGION", "us-central1")
+    gemini_client = genai.Client(vertexai=True, project=project_id, location=location)
+    print("[DevDraft] Using Vertex AI (ADC)")
+except Exception as e:
+    print(f"[DevDraft] Failed to use Vertex AI: {e}")
+    # Fallback to API Key if strictly necessary (though it failed previously)
+    if GEMINI_API_KEY:
+         print("[DevDraft] Falling back to AI Studio (API Key)")
+         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    else:
+         gemini_client = None
 
 # Initialize Cerebras Client (for requirement extraction)
 if CEREBRAS_API_KEY:
