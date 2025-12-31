@@ -1,9 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Consensus",
+  "name": "DEVDRAFT",
   "version": "1.0.0",
   "description": "The Anti-Groupthink Engine",
-  "permissions": ["sidePanel"],
+  "permissions": [
+    "sidePanel"
+  ],
   "side_panel": {
     "default_path": "sidepanel.html"
   },
