@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Download,
@@ -16,6 +17,7 @@ import {
   Code
 } from 'lucide-react';
 import './index.css';
+import Dashboard from './pages/Dashboard';
 
 // Animation variants
 const fadeInUp = {
@@ -85,15 +87,16 @@ const Hero = () => (
           <Download size={24} />
           Download Extension
         </motion.a>
-        <motion.a
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          href="#how-it-works"
-          className="inline-flex items-center gap-3 bg-white/5 text-white border border-white/10 px-8 py-4 text-lg font-bold rounded-full hover:bg-white/10 transition-colors backdrop-blur-md"
-        >
-          How It Works
-          <ArrowRight size={24} />
-        </motion.a>
+        <Link to="/dashboard">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center gap-3 bg-white/5 text-white border border-white/10 px-8 py-4 text-lg font-bold rounded-full hover:bg-white/10 transition-colors backdrop-blur-md cursor-pointer"
+          >
+            Try Web Demo
+            <ArrowRight size={24} />
+          </motion.div>
+        </Link>
       </motion.div>
     </motion.div>
   </section>
@@ -102,6 +105,7 @@ const Hero = () => (
 // How It Works Section
 const HowItWorks = () => {
   const [copied, setCopied] = useState(false);
+  const navigate = useNavigate();
 
   const steps = [
     {
@@ -117,14 +121,16 @@ const HowItWorks = () => {
       title: "Load Extension",
       code: "chrome://extensions",
       desc: "Enable Developer Mode -> 'Load Unpacked' -> Select unzipped folder.",
-      href: "chrome://extensions", // Browser blocks this, handled by onClick
+      href: "chrome://extensions",
       isSpecial: true
     },
     {
       icon: Mic,
-      title: "Start Analyzing",
-      code: "Open Side Panel",
-      desc: "Open the extension in any meeting tab to begin."
+      title: "Web Demo",
+      code: "Try Now",
+      desc: "No extension? Try the full experience in your browser right now.",
+      action: () => navigate('/dashboard'),
+      isAction: true
     }
   ];
 
@@ -162,7 +168,7 @@ const HowItWorks = () => {
                   </div>
                   <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
                   <code className="block bg-black/50 text-gray-300 text-sm px-3 py-2 rounded-lg mb-4 font-mono border border-white/5">
-                    {step.title === 'Download' ? 'Click to Download' : '$ ' + step.code}
+                    {step.title === 'Download' ? 'Click to Download' : (step.isAction ? '⚡ ' + step.code : '$ ' + step.code)}
                   </code>
                   <p className="text-gray-400 leading-relaxed">{step.desc}</p>
 
@@ -175,6 +181,20 @@ const HowItWorks = () => {
                 </div>
               </>
             );
+
+            if (step.isAction) {
+              return (
+                <motion.div
+                  key={idx}
+                  onClick={step.action}
+                  variants={fadeInUp}
+                  className="glass-card p-8 rounded-3xl relative overflow-hidden group w-full md:w-[calc(33.333%-16px)] min-w-[300px] cursor-pointer"
+                  whileHover={{ y: -5 }}
+                >
+                  {CardContent}
+                </motion.div>
+              )
+            }
 
             return step.href ? (
               <motion.a
@@ -420,7 +440,6 @@ const LivePRDPreview = () => {
   );
 };
 
-// Footer
 const Footer = () => (
   <footer className="py-20 px-6 border-t border-white/5 bg-midnight relative overflow-hidden">
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-action-blue/5 blur-[100px] rounded-full pointer-events-none"></div>
@@ -452,16 +471,26 @@ const Footer = () => (
   </footer>
 );
 
-// Main App
+// Landing Home Component
+const Home = () => (
+  <div className="bg-midnight min-h-screen text-white selection:bg-action-blue selection:text-white">
+    <Hero />
+    <HowItWorks />
+    <CoreFeatures />
+    <LivePRDPreview />
+    <Footer />
+  </div>
+);
+
+// Main App with Router
 function App() {
   return (
-    <div className="bg-midnight min-h-screen text-white selection:bg-action-blue selection:text-white">
-      <Hero />
-      <HowItWorks />
-      <CoreFeatures />
-      <LivePRDPreview />
-      <Footer />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    </Router>
   );
 }
 
